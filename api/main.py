@@ -1,5 +1,10 @@
 from hanoi import Hanoi
+from fastapi import FastAPI
 
-num_disk = int(input("Enter the number of disks: "))
+app = FastAPI()
 
-Hanoi(num_disk, 1, 3)
+@app.get("/hanoi/{num_disk}")
+def get_hanoi(num_disk: int):
+    h = Hanoi(num_disk)
+    steps = h.solve()
+    return {"min_steps": h.min_moves, "steps": steps}
