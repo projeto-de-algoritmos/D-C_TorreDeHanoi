@@ -39,9 +39,36 @@
   grid-column: span 3;
   background-color: rgb(165, 108, 42);
   border-radius: 10px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+
+    > label {
+      color: white;
+    }
+  }
+
+  > button {
+    background-color: grey;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: lighten($color: grey, $amount: 10%);
+    }
+  }
 }
 
-.counter{
+.counter {
   position: absolute;
   top: 10px;
   left: 24px;

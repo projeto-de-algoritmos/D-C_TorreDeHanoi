@@ -25,7 +25,7 @@ export default function Home() {
 
   const [solved, setSolved] = useState(false);
 
-  const numberOfPieces = 8;
+  const [numberOfPieces, setNumberOfPieces] = useState(8);
 
   useEffect(() => {
     let width = 20;
@@ -38,12 +38,14 @@ export default function Home() {
 
     const columns = [pieces, [], []];
     setColumns(columns);
-  }, []);
+  }, [numberOfPieces]);
 
   async function solve() {
     if (solved) {
       return location.reload();
     }
+
+    setSolved(true);
 
     try {
       const response = await api.get<HanoiResponse>(`hanoi/${numberOfPieces}`);
@@ -65,8 +67,6 @@ export default function Home() {
         setColumns(copyColumns);
         setCounter((prev) => prev + 1);
       }
-
-      setSolved(true);
     } catch (error) {
       console.error(error);
     }
@@ -107,7 +107,26 @@ export default function Home() {
         </div>
 
         {/* base */}
-        <div className={styles.base} onClick={solve} />
+        <div className={styles.base}>
+          <div>
+            <label>Número de peças</label>
+            <input
+              type="number"
+              value={numberOfPieces}
+              onChange={(e) => {
+                const number = parseInt(e.target.value);
+
+                if (number > 0) {
+                  setNumberOfPieces(number);
+                }
+              }}
+            />
+          </div>
+
+          <button type="button" onClick={solve}>
+            Resolver
+          </button>
+        </div>
       </div>
 
       <div className={styles.counter}>
