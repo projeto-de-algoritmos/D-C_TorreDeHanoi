@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from "./styles.module.scss";
+import { api } from "../../api";
 
 interface Piece {
   id: number;
@@ -11,125 +12,108 @@ interface Step {
   to: number;
 }
 
+interface HanoiResponse {
+  min_steps: number;
+  steps: Step[];
+}
+
 export default function Home() {
-  const [firstColumn, setFirstColumn] = useState<Piece[]>([]);
-  const [secondColumn, setSecondColumn] = useState<Piece[]>([]);
-  const [thirdColumn, setThirdColumn] = useState<Piece[]>([]);
+  const [columns, setColumns] = useState<Piece[][]>([[], [], []]);
 
-  const numberOfPieces = 3;
+  const [counter, setCounter] = useState(0);
+  const [stepsNeeded, setStepsNeeded] = useState(0);
 
-  useEffect(() => reset(), []);
+  const [solved, setSolved] = useState(false);
 
-  function reset() {
+  const numberOfPieces = 8;
+
+  useEffect(() => {
     let width = 20;
     const pieces: Piece[] = [];
 
     for (let index = 0; index < numberOfPieces; index++) {
-      pieces.push({
-        id: index,
-        width,
-      });
-
+      pieces.push({ id: index, width });
       width += 10;
     }
 
-    setFirstColumn(pieces);
-    setSecondColumn([]);
-    setThirdColumn([]);
-  }
+    const columns = [pieces, [], []];
+    setColumns(columns);
+  }, []);
 
   async function solve() {
-    const steps: Step[] = [
-      {
-        from: 1,
-        to: 3,
-      },
-      {
-        from: 1,
-        to: 2,
-      },
-      {
-        from: 3,
-        to: 2,
-      },
-      {
-        from: 1,
-        to: 3,
-      },
-      {
-        from: 2,
-        to: 1,
-      },
-      {
-        from: 2,
-        to: 3,
-      },
-      {
-        from: 1,
-        to: 3,
-      },
-    ];
+    if (solved) {
+      return location.reload();
+    }
 
-    for (const step of steps) {
-      await change(step);
+    try {
+      const response = await api.get<HanoiResponse>(`hanoi/${numberOfPieces}`);
+      setStepsNeeded(response.data.min_steps);
+
+      for (const { from, to } of response.data.steps) {
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        const copyColumns = columns.map((v) => v);
+
+        const fromColumn = copyColumns[from - 1];
+        const toColumn = copyColumns[to - 1];
+
+        if (fromColumn.length === 0) return;
+
+        const piece = fromColumn.shift();
+        toColumn.unshift(piece!);
+
+        setColumns(copyColumns);
+        setCounter((prev) => prev + 1);
+      }
+
+      setSolved(true);
+    } catch (error) {
+      console.error(error);
     }
   }
 
-  async function change({ from, to }: Step) {
-    const columns = [firstColumn, secondColumn, thirdColumn];
-
-    const fromColumn = columns[from - 1];
-    const toColumn = columns[to - 1];
-
-    if (fromColumn.length === 0) return;
-
-    const piece = fromColumn.shift();
-    toColumn.unshift(piece!);
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    setFirstColumn([...firstColumn]);
-    setSecondColumn([...secondColumn]);
-    setThirdColumn([...thirdColumn]);
-  }
-
   return (
-    <div className={styles.container}>
-      {/* columns */}
-      <div className={styles.sector}>
-        {/*<span className={styles.column}></span>*/}
+    <>
+      <div className={styles.container}>
+        {/* columns */}
+        <div className={styles.sector}>
+          {columns[0].map((piece) => (
+            <span
+              key={piece.id}
+              className={styles.piece}
+              style={{ width: `${piece.width}%` }}
+            />
+          ))}
+        </div>
 
-        {firstColumn.map((piece) => (
-          <span
-            key={piece.id}
-            className={styles.piece}
-            style={{ width: `${piece.width}%` }}
-          />
-        ))}
+        <div className={styles.sector}>
+          {columns[1].map((piece) => (
+            <span
+              key={piece.id}
+              className={styles.piece}
+              style={{ width: `${piece.width}%` }}
+            />
+          ))}
+        </div>
+
+        <div className={styles.sector}>
+          {columns[2].map((piece) => (
+            <span
+              key={piece.id}
+              className={styles.piece}
+              style={{ width: `${piece.width}%` }}
+            />
+          ))}
+        </div>
+
+        {/* base */}
+        <div className={styles.base} onClick={solve} />
       </div>
 
-      <div className={styles.sector}>
-        {secondColumn.map((piece) => (
-          <span
-            key={piece.id}
-            className={styles.piece}
-            style={{ width: `${piece.width}%` }}
-          />
-        ))}
+      <div className={styles.counter}>
+        <p>Passos necessários: {stepsNeeded}</p>
+        <p>N° de passos: {counter}</p>
       </div>
-
-      <div className={styles.sector}>
-        {thirdColumn.map((piece) => (
-          <span
-            key={piece.id}
-            className={styles.piece}
-            style={{ width: `${piece.width}%` }}
-          />
-        ))}
-      </div>
-
-      {/* base */}
-      <div className={styles.base} onClick={solve} />
-    </div>
+    </>
   );
 }
